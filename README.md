@@ -6,6 +6,7 @@ It keeps the upstream runner entrypoint and adds/fixes common tooling required b
 
 - Python 3 / `python` alias
 - pip and venv
+- Python Tk runtime (`tkinter`)
 - Node.js 24 + npm
 - PHP 8.5 CLI with common Laravel/CI extensions (`bcmath`, `curl`, `intl`, `mbstring`, `mysql`, `sqlite3`, `xml`, `zip`)
 - Composer
@@ -92,4 +93,4 @@ Docker access is intentionally not included in the default example. Add it only 
 
 `.github/workflows/publish.yml` builds `linux/amd64` and publishes to GitHub Container Registry using the repository-scoped `GITHUB_TOKEN`. No long-lived package PAT is required for CI publishing.
 
-The Dockerfile validates the expected baseline toolchain during the image build, so a missing `python`, `npm`, `php`, `composer`, `gh`, `yq`, `rg`, `pwsh`, Git or Docker CLI causes publication to fail.
+The Dockerfile validates the expected baseline toolchain during the image build, including `tkinter`, so a missing `python`, `npm`, `php`, `composer`, `gh`, `yq`, `rg`, `pwsh`, Git or Docker CLI causes publication to fail.
