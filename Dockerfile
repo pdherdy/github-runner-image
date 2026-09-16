@@ -11,6 +11,7 @@ LABEL org.opencontainers.image.source="https://github.com/pdherdy/github-runner-
 # The upstream runner already includes most CI tooling. Add/fix the pieces
 # required by our repositories:
 # - `python` -> Python 3 on Ubuntu Noble (3.12)
+# - Tk runtime for Python GUI/headless import validation
 # - Node.js 24 with npm
 # - PHP 8.5 + common Laravel/CLI extensions
 # - Composer
@@ -24,6 +25,7 @@ RUN apt-get update \
         jq \
         python3 \
         python3-pip \
+        python3-tk \
         python3-venv \
         python-is-python3 \
         ripgrep \
@@ -67,6 +69,7 @@ RUN npx --yes playwright@1.55.0 install-deps chromium \
 # available. PowerShell, Git and Docker CLI come from the upstream runner.
 RUN python --version \
     && python3 --version \
+    && python -c "import tkinter; print('tkinter', tkinter.TkVersion)" \
     && pip --version \
     && node --version \
     && npm --version \
