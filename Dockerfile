@@ -13,7 +13,7 @@ LABEL org.opencontainers.image.source="https://github.com/pdherdy/github-runner-
 # - `python` -> Python 3 on Ubuntu Noble (3.12)
 # - Tk runtime for Python GUI/headless import validation
 # - Node.js 24 with npm
-# - PHP 8.5 + common Laravel/CLI extensions
+# - PHP 8.5 + common Laravel/CLI extensions, including PDO MySQL support
 # - Composer
 # - GitHub CLI, yq and ripgrep
 # - common archive/JSON utilities
@@ -67,6 +67,9 @@ RUN npx --yes playwright@1.55.0 install-deps chromium \
 
 # Fail the image build immediately if the expected baseline toolchain is not
 # available. PowerShell, Git and Docker CLI come from the upstream runner.
+# The MySQL check validates the PHP driver only; no mysql/mysqldump client is
+# installed in the runner image because workflows can use disposable MySQL
+# service containers when a real server is needed.
 RUN python --version \
     && python3 --version \
     && python -c "import tkinter; print('tkinter', tkinter.TkVersion)" \
@@ -74,6 +77,7 @@ RUN python --version \
     && node --version \
     && npm --version \
     && php --version \
+    && php -r 'foreach (["PDO", "pdo_mysql", "pdo_sqlite"] as $ext) { if (!extension_loaded($ext)) { fwrite(STDERR, "$ext is required.\n"); exit(1); } echo $ext, PHP_EOL; }' \
     && composer --version \
     && gh --version \
     && yq --version \
