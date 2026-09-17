@@ -18,17 +18,24 @@ jobs:
         run: docker logout ghcr.io || true
 
       - name: Pull image anonymously
-        run: docker pull ghcr.io/pdherdy/truenas-actions-runner:latest
+        run: docker pull ghcr.io/pdherdy/github-runner-image:latest
 
       - name: Verify toolchain inside published image
         run: |
-          docker run --rm --entrypoint bash ghcr.io/pdherdy/truenas-actions-runner:latest -lc '
+          docker run --rm --entrypoint bash ghcr.io/pdherdy/github-runner-image:latest -lc '
             set -euo pipefail
             python --version
             python3 --version
+            python -c "import tkinter; print(\"tkinter\", tkinter.TkVersion)"
             pip --version
             node --version
             npm --version
+            php --version
+            php -r '\''foreach (["PDO", "pdo_mysql", "pdo_sqlite"] as $ext) { if (!extension_loaded($ext)) { fwrite(STDERR, "$ext is required.\n"); exit(1); } echo $ext, PHP_EOL; }'\''
+            composer --version
+            gh --version
+            yq --version
+            rg --version
             pwsh --version
             git --version
             docker --version
