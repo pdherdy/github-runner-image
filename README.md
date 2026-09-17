@@ -8,7 +8,7 @@ It keeps the upstream runner entrypoint and adds/fixes common tooling required b
 - pip and venv
 - Python Tk runtime (`tkinter`)
 - Node.js 24 + npm
-- PHP 8.5 CLI with common Laravel/CI extensions (`bcmath`, `curl`, `intl`, `mbstring`, `mysql`, `sqlite3`, `xml`, `zip`)
+- PHP 8.5 CLI with common Laravel/CI extensions (`bcmath`, `curl`, `intl`, `mbstring`, `mysql`/`pdo_mysql`, `sqlite3`, `xml`, `zip`)
 - Composer
 - GitHub CLI (`gh`)
 - `yq`
@@ -55,6 +55,38 @@ Each concurrently running runner instance should have its own `/runner/data` and
 
 Do not store GitHub registration tokens, PATs or repository secrets in this image.
 
+## MySQL test services
+
+The runner image includes PHP's MySQL/PDO driver (`pdo_mysql`) but intentionally does **not** include a MySQL server or MySQL CLI client.
+
+When a workflow needs a real MySQL server, use a disposable service container instead of baking the server into the runner image. For example:
+
+```yaml
+services:
+  mysql:
+    image: mysql:8.4.11
+    env:
+      MYSQL_ROOT_PASSWORD: ci-password
+      MYSQL_DATABASE: app_test
+    ports:
+      - 3306:3306
+    options: >-
+      --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci-password"
+      --health-interval=5s
+      --health-timeout=3s
+      --health-retries=20
+```
+
+PHP can connect directly through PDO, so Laravel migrations, Eloquent and test suites do not require the `mysql` command-line client in the runner:
+
+```bash
+php -r '$pdo = new PDO("mysql:host=127.0.0.1;port=3306;dbname=app_test", "root", "ci-password"); echo $pdo->query("SELECT VERSION()")->fetchColumn(), PHP_EOL;'
+```
+
+On a Docker-enabled self-hosted runner, Docker downloads the MySQL image automatically the first time it is requested. Later jobs reuse the locally cached image layers; destroying a test container does not remove the cached `mysql:8.4.11` image.
+
+If a workflow needs administrative CLI commands, prefer running the tools already present inside the MySQL service container (for example with `docker exec`) rather than installing a permanent MySQL client in the runner image.
+
 ## Updating an existing Docker/Compose deployment
 
 When `latest` is rebuilt, pull the new digest and recreate the runner container. Persistent runner identity and work mounts are preserved.
@@ -93,4 +125,4 @@ Docker access is intentionally not included in the default example. Add it only 
 
 `.github/workflows/publish.yml` builds `linux/amd64` and publishes to GitHub Container Registry using the repository-scoped `GITHUB_TOKEN`. No long-lived package PAT is required for CI publishing.
 
-The Dockerfile validates the expected baseline toolchain during the image build, including `tkinter`, so a missing `python`, `npm`, `php`, `composer`, `gh`, `yq`, `rg`, `pwsh`, Git or Docker CLI causes publication to fail.
+The Dockerfile validates the expected baseline toolchain during the image build, including `tkinter`, `PDO`, `pdo_mysql` and `pdo_sqlite`, so a missing `python`, `npm`, PHP database driver, `composer`, `gh`, `yq`, `rg`, `pwsh`, Git or Docker CLI causes publication to fail.
